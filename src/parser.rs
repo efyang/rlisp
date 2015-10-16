@@ -2,17 +2,24 @@ use data::*;
 use std::fs::File;
 use std::io::prelude::*;
 
-pub fn parse_file(filename: &str) -> Expr {
-    let mut f = File::open(filename).expect("Failed to open file.");
+pub fn parse_file(filename: &str) -> Result<Expr, String> {
+    let mut f: File;
+    match File::open(filename) {
+        Ok(r) => f = r,
+        Err(_) => return Err(format!("Failed to open file {:?}", filename))
+    }
     let mut s = String::new();
-    f.read_to_string(&mut s).expect("Failed to read file.");
-    parse(&s)
+    match f.read_to_string(&mut s) {
+        Ok(_) => {},
+        Err(_) => return Err(format!("Failed to read file {:?}", filename))
+    }
+    return parse(&s)
 }
 
-pub fn parse(data: &String) -> Expr {
+pub fn parse(data: &String) -> Result<Expr, String> {
     let parens = count_parens(data);
     if parens.0 != parens.1 {
-        panic!("One or more unmatched parentheses.");
+        return Err("One or more unmatched parentheses.".to_string())
     }
     let mut tokens = tokenize(&lines_to_spaces(&data))
         .iter()
@@ -34,21 +41,25 @@ fn count_parens(data: &String) -> (usize, usize) {
         })
 }
 
-fn tokens_to_expr(tokens: &mut Vec<String>) -> Expr {
+fn tokens_to_expr(tokens: &mut Vec<String>) -> Result<Expr, String> {
     if tokens.is_empty() {
-        panic!("No tokens to parse.");
+        return Err("No tokens to parse.".to_string())
     }
     let token: String;
     token = tokens.pop().unwrap();
     if token == "(" {
         let mut l = Vec::new();
         while tokens.last().unwrap().as_str() != ")" {
-            l.push(tokens_to_expr(tokens));
+            let expr = tokens_to_expr(tokens);
+            match expr {
+                Ok(r) => l.push(r),
+                Err(_) => return expr
+            }
         }
         //tokens.pop().unwrap();
-        Expr::Exprs(Box::new(remove_spaces(l)))
+        Ok(Expr::Exprs(Box::new(remove_spaces(l))))
     } else if token == ")" {
-        panic!("Unexpected )");
+        Err("Unexpected )".to_string())
     } else if token == "\"" {
         if !tokens.contains(&"\"".to_string()) {
             panic!("No end quote.");
@@ -59,9 +70,9 @@ fn tokens_to_expr(tokens: &mut Vec<String>) -> Expr {
         }
         tokens.pop().unwrap();
         s.pop().unwrap();
-        Expr::Expr(Object::String(s.split_first().unwrap().1.concat()))
+        Ok(Expr::Expr(Object::String(s.split_first().unwrap().1.concat())))
     } else {
-        Expr::Expr(atomize(token))
+        Ok(Expr::Expr(atomize(token)))
     }
 }
 

@@ -19,7 +19,16 @@ info = INFO);
     let mut stdenv = Env::new();
     let mut history: Vec<String> = Vec::new();
     if let Some(filename) = file {
-        println!("{:?}", parse_file(filename).eval(&mut stdenv));
+        let parsed = parse_file(filename);
+        match parsed {
+            Ok(rp) => {let evaluated = rp.eval(&mut stdenv);
+                    match evaluated {
+                        Ok(r) => println!("{:?}", r),
+                        Err(e) => println!("Eval of input file: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = filename, e = e)
+                    }
+            },
+            Err(e) => {println!("Parsing of input file: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = filename, e = e)}
+        }
     }
     loop {
         //use ncurses to get chars?
@@ -29,10 +38,15 @@ info = INFO);
         reader.read_line(&mut input).expect("Failed to read line.");
         if input != "\n".to_string() {
             history.push(input.clone());
-            let evaluated = parse(&input).eval(&mut stdenv);
-            match evaluated {
-                Ok(r) => println!("{:?}", r),
-                Err(e) => println!("Eval of {input} failed with error {e}", input = input, e = e)
+            let parsed = parse(&input);
+            match parsed {
+                Ok(rp) => {let evaluated = rp.eval(&mut stdenv);
+                    match evaluated {
+                        Ok(r) => println!("{:?}", r),
+                        Err(e) => println!("Eval of input: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = input, e = e)
+                    }
+                },
+                Err(e) => {println!("Parsing of input: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = input, e = e)}
             }
             println!("{:?}", history);
         }
