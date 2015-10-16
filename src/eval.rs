@@ -32,7 +32,7 @@ impl Expr {
 fn eval_function(function_name: &String, args: Vec<Object>, env: &mut Env) -> Result<Object, String> {
     let function = match_first_function(function_name, env.functions.clone());
     if function.is_ok() {
-        let evaluated = function.ok().unwrap().procedure)(args, env);
+        let evaluated = (function.ok().unwrap().procedure)(args, env);
         match evaluated {
             Ok(r) => Ok(r),
             Err(e) => Err(e)

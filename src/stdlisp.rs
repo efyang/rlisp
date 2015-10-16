@@ -12,9 +12,13 @@ pub static BASE_FUNCTIONS: &'static [Function<'static>] = &[
 //use Result for all of these functions to catch runtime errors
 
 fn add(args: Vec<Object>, _: &mut Env) -> Result<Object, String> {
-    let numbers = args.iter()
-        .map(|x| get_number(x))
-        .collect::<Vec<Number>>();
+    let mut numbers = Vec::with_capacity(args.len());
+    for a in args.iter() {
+        match get_number(a) {
+            Ok(r) => numbers.push(r),
+            Err(e) => return Err(e)
+        }
+    }
 
     Ok(Object::Number(numbers.first().unwrap().clone()))
 }
@@ -71,5 +75,5 @@ fn cons(args: Vec<Object>, _: &mut Env) -> Result<Object, String> {
 }
 
 fn exit(args: Vec<Object>, _: &mut Env) -> Result<Object, String> {
-    Err("rlisp exited successfully.")
+    Err("rlisp exited successfully.".to_string())
 }

@@ -70,5 +70,5 @@ impl<'a> Env<'a> {
 #[derive(Clone)]
 pub struct Function<'a> {
     pub name: &'static str,
-    pub procedure: &'a (fn(Vec<Object>, &mut Env) -> Object),
+    pub procedure: &'a LispFn,
 }
