@@ -21,13 +21,14 @@ info = INFO);
     if let Some(filename) = file {
         let parsed = parse_file(filename);
         match parsed {
-            Ok(rp) => {let evaluated = rp.eval(&mut stdenv);
-                    match evaluated {
-                        Ok(r) => println!("{:?}", r),
-                        Err(e) => println!("Eval of input file: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = filename, e = e)
-                    }
+            Ok(rp) => {
+                let evaluated = rp.eval(&mut stdenv);
+                match evaluated {
+                    Ok(r) => println!("{:?}", r),
+                    Err(e) => println!("Eval of input file: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = filename, e = e)
+                }
             },
-            Err(e) => {println!("Parsing of input file: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = filename, e = e)}
+            Err(e) => println!("Parsing of input file: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = filename, e = e)
         }
     }
     loop {
@@ -40,13 +41,14 @@ info = INFO);
             history.push(input.clone());
             let parsed = parse(&input);
             match parsed {
-                Ok(rp) => {let evaluated = rp.eval(&mut stdenv);
+                Ok(rp) => {
+                    let evaluated = rp.eval(&mut stdenv);
                     match evaluated {
                         Ok(r) => println!("{:?}", r),
                         Err(e) => println!("Eval of input: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = input, e = e)
                     }
                 },
-                Err(e) => {println!("Parsing of input: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = input, e = e)}
+                Err(e) => println!("Parsing of input: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = input, e = e)
             }
             println!("{:?}", history);
         }

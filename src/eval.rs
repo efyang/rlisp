@@ -1,23 +1,19 @@
 use data::*;
-use std::thread;
 
 impl Expr {
     pub fn eval(&self, env: &mut Env) -> Result<Object, String> {
         if let &Expr::Exprs(ref exprs) = self {
-            //let evaluated = exprs
-                //.iter()
-                //.map(|ref mut x| x.eval(env))
-                //.collect::<Vec<Object>>();
-            let mut evaluated: Vec<Object> = Vec::new(); for expr in exprs.iter() {
+            let mut evaluated: Vec<Object> = Vec::new(); 
+            for expr in exprs.iter() {
                 let evalresult = expr.eval(env);
                 match evalresult {
                     Ok(r) => evaluated.push(r),
                     Err(_) => return evalresult,
                 }
             }
-            let splitted: (&Object, &[Object]) = evaluated.split_first().unwrap();
-            let function_name = splitted.0;
-            let args = splitted.1.to_vec();
+            let (head, tail): (&Object, &[Object]) = evaluated.split_first().unwrap();
+            let function_name = head;
+            let args = tail.to_vec();
             if let &Object::Symbol(ref fn_name) = function_name {
                 eval_function(fn_name, args, env)
             } else {

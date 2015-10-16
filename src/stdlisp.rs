@@ -9,6 +9,8 @@ pub static BASE_FUNCTIONS: &'static [Function<'static>] = &[
     Function {name: "exit", procedure: &(exit as LispFn)},
 ];
 
+//use Result for all of these functions to catch runtime errors
+
 fn add(args: Vec<Object>, _: &mut Env) -> Object {
     let numbers = args.iter()
         .map(|x| get_number(x))
