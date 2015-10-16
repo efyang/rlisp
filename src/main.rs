@@ -33,13 +33,14 @@ fn main() {
         if matches.is_present("interactive") {
             repl(Some(input));
         } else {
-            println!("{:?}", parse_file(input).eval(&mut Env::new()));
+            let evaluated = parse_file(input).eval(&mut Env::new());
+            match evaluated {
+                Ok(r) => println!("{:?}", r),
+                Err(e) => println!("Eval of {input} failed with error {e}", input = input, e = e)
+            }
         }
     } else {
         repl(None);
     }
-    //let parsed = parse(&"(cons 1 (list 1 2))".to_string());
-    //let mut stdenv = Env::new();
-    //println!("{:?}", parsed.eval(&mut stdenv));
 }
 

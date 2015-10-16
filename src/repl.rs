@@ -29,7 +29,11 @@ info = INFO);
         reader.read_line(&mut input).expect("Failed to read line.");
         if input != "\n".to_string() {
             history.push(input.clone());
-            println!("{:?}", parse(&input).eval(&mut stdenv));
+            let evaluated = parse(&input).eval(&mut stdenv);
+            match evaluated {
+                Ok(r) => println!("{:?}", r),
+                Err(e) => println!("Eval of {input} failed with error {e}", input = input, e = e)
+            }
             println!("{:?}", history);
         }
     }

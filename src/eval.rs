@@ -2,48 +2,55 @@ use data::*;
 use std::thread;
 
 impl Expr {
-    pub fn eval_no_panic(&self, env: &mut Env) -> Expr {
-        unimplemented!()
-    }
-
-    pub fn eval(&self, env: &mut Env) -> Object {
+    pub fn eval(&self, env: &mut Env) -> Result<Object, String> {
         if let &Expr::Exprs(ref exprs) = self {
-            let evaluated = exprs
-                .iter()
-                .map(|ref mut x| x.eval(env))
-                .collect::<Vec<Object>>();
+            //let evaluated = exprs
+                //.iter()
+                //.map(|ref mut x| x.eval(env))
+                //.collect::<Vec<Object>>();
+            let mut evaluated: Vec<Object> = Vec::new(); for expr in exprs.iter() {
+                let evalresult = expr.eval(env);
+                match evalresult {
+                    Ok(r) => evaluated.push(r),
+                    Err(_) => return evalresult,
+                }
+            }
             let splitted: (&Object, &[Object]) = evaluated.split_first().unwrap();
             let function_name = splitted.0;
             let args = splitted.1.to_vec();
             if let &Object::Symbol(ref fn_name) = function_name {
                 eval_function(fn_name, args, env)
             } else {
-                panic!("Invalid function name {:?}", function_name);
+                Err(format!("Invalid function name {:?}", function_name))
             }
         } else {
             if let &Expr::Expr(ref object) = self {
-                object.clone()
+                Ok(object.clone())
             } else {
-                panic!("Failed to eval {:?}", self);
+                Err(format!("Failed to eval {:?}", self))
             }
         }
     }
 }
 
-fn eval_function(function_name: &String, args: Vec<Object>, env: &mut Env) -> Object {
+fn eval_function(function_name: &String, args: Vec<Object>, env: &mut Env) -> Result<Object, String> {
     let function = match_first_function(function_name, env.functions.clone());
-    (function.procedure)(args, env)
+    if function.is_ok() {
+        Ok((function.ok().unwrap().procedure)(args, env))
+    } else {
+        Err(function.err().unwrap())
+    }
 }
 
-fn match_first_function<'a>(function_name: &String, functions: Vec<Function<'a>>) -> Function<'a> {
+fn match_first_function<'a>(function_name: &String, functions: Vec<Function<'a>>) -> Result<Function<'a>, String> {
     if functions.is_empty() {
-        panic!("No such function {:?}", function_name);    
+        return Err(format!("No such function {:?}", function_name));
     }
-    let splitted: (&Function, &[Function]) = functions.split_first().unwrap();
-    let current = splitted.0;
+    let (head, tail): (&Function, &[Function]) = functions.split_first().unwrap();
+    let current = head;
     if &current.name.to_string() == function_name {
-        current.clone()
+        Ok(current.clone())
     } else {
-        match_first_function(function_name, splitted.1.to_vec())  
+        match_first_function(function_name, tail.to_vec())
     }
 }

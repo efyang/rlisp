@@ -29,6 +29,7 @@ pub struct Env<'a> {
     pub variables: HashMap<String, Object>,
 }
 
+#[allow(dead_code)]
 impl<'a> Env<'a> {
     pub fn new() -> Env<'a> {
         Env {
