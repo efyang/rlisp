@@ -17,7 +17,7 @@ info = INFO);
     let stdout = io::stdout();
     let mut writer = stdout.lock();
     let mut stdenv = Env::new();
-    let mut history: Vec<String> = Vec::new();
+    //let mut history: Vec<String> = Vec::new();
     if let Some(filename) = file {
         let parsed = parse_file(filename);
         match parsed {
@@ -38,7 +38,7 @@ info = INFO);
         let mut input = String::new();
         reader.read_line(&mut input).expect("Failed to read line.");
         if input != "\n".to_string() {
-            history.push(input.clone());
+            //history.push(input.clone());
             let parsed = parse(&input);
             match parsed {
                 Ok(rp) => {
@@ -50,7 +50,7 @@ info = INFO);
                 },
                 Err(e) => println!("Parsing of input: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = input, e = e)
             }
-            println!("{:?}", history);
+            //println!("{:?}", history);
         }
     }
 }
