@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use stdlisp::BASE_FUNCTIONS;
 
-pub type LispFn = fn(Vec<Object>, &mut Env) -> Object;
+pub type LispFn = fn(Vec<Object>, &mut Env) -> Result<Object, String>;
 
-#[derive(Debug, Clone)] 
+#[derive(Debug, Clone)]
 pub enum Expr {
     Expr(Object),
     Exprs(Box<Vec<Expr>>),
@@ -72,5 +72,3 @@ pub struct Function<'a> {
     pub name: &'static str,
     pub procedure: &'a (fn(Vec<Object>, &mut Env) -> Object),
 }
-
-

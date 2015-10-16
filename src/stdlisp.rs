@@ -11,49 +11,49 @@ pub static BASE_FUNCTIONS: &'static [Function<'static>] = &[
 
 //use Result for all of these functions to catch runtime errors
 
-fn add(args: Vec<Object>, _: &mut Env) -> Object {
+fn add(args: Vec<Object>, _: &mut Env) -> Result<Object, String> {
     let numbers = args.iter()
         .map(|x| get_number(x))
         .collect::<Vec<Number>>();
 
-    Object::Number(numbers.first().unwrap().clone())
+    Ok(Object::Number(numbers.first().unwrap().clone()))
 }
 
 //fn subtract(args: Vec<Object>, env: &mut Env) -> Object {
     //for object in args.iter() {
-    
+
     //}
 //}
 
-fn get_number(object: &Object) -> Number {
+fn get_number(object: &Object) -> Result<Number, String> {
     if let &Object::Number(ref n) = object {
-        n.clone()
+        Ok(n.clone())
     } else {
-        panic!("Object {:?} is not a number.", object);
+        Err(format!("Object {:?} is not a number.", object))
     }
 }
 
-//fn define(args: Vec<Object>, env: &mut Env) -> 
+//fn define(args: Vec<Object>, env: &mut Env) ->
 
-fn list(args: Vec<Object>, _: &mut Env) -> Object {
-    Object::List(Box::new(args))
+fn list(args: Vec<Object>, _: &mut Env) -> Result<Object, String> {
+    Ok(Object::List(Box::new(args)))
 }
 
-fn cons(args: Vec<Object>, _: &mut Env) -> Object {
+fn cons(args: Vec<Object>, _: &mut Env) -> Result<Object, String> {
     if !(args.len() == 2) {
         //invalid arg number
-        panic!("Invalid number of arguments for cons.")
+        Err(format!("Invalid number of arguments for cons."))
     } else {
         let first = args.first().unwrap().clone();
         let last = args.last().unwrap().clone();
         if let Object::List(elems) = first {
             //list is in the head position; append the element
             if let Object::List(_) = last {
-                panic!("Cannot cons two lists.");
+                Err(format!("Cannot cons two lists."))
             } else {
                 let mut tmpvec = *elems.clone();
                 tmpvec.push(last.clone());
-                Object::List(Box::new(tmpvec))
+                Ok(Object::List(Box::new(tmpvec)))
             }
         } else {
             //list or elem is in the tail position; append the list or make a new list
@@ -62,14 +62,14 @@ fn cons(args: Vec<Object>, _: &mut Env) -> Object {
                 for x in elems.iter() {
                     tmpvec.push(x.clone());
                 }
-                Object::List(Box::new(tmpvec))
+                Ok(Object::List(Box::new(tmpvec)))
             } else {
-                Object::List(Box::new(args))
+                Ok(Object::List(Box::new(args)))
             }
-        }    
-    } 
+        }
+    }
 }
 
-fn exit(args: Vec<Object>, _: &mut Env) -> Object {
-    panic!("rlisp exited.");
+fn exit(args: Vec<Object>, _: &mut Env) -> Result<Object, String> {
+    Err("rlisp exited successfully.")
 }
