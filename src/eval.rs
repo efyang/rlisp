@@ -1,13 +1,14 @@
 use data::*;
 
 impl Expr {
-    pub fn eval(&self, env: &mut Env) -> Result<Object, String> {
+    pub fn eval(&self, env: &mut Env) -> Result<Option<Object>, String> {
         if let &Expr::Exprs(ref exprs) = self {
             let mut evaluated: Vec<Object> = Vec::new();
             for expr in exprs.iter() {
                 let evalresult = expr.eval(env);
                 match evalresult {
-                    Ok(r) => evaluated.push(r),
+                    Ok(Some(r)) => evaluated.push(r),
+                    Ok(None) => {},
                     Err(_) => return evalresult,
                 }
             }
@@ -21,7 +22,7 @@ impl Expr {
             }
         } else {
             if let &Expr::Expr(ref object) = self {
-                Ok(object.clone())
+                Ok(Some(object.clone()))
             } else {
                 Err(format!("Failed to eval {:?}", self))
             }
@@ -29,12 +30,13 @@ impl Expr {
     }
 }
 
-fn eval_function(function_name: &String, args: Vec<Object>, env: &mut Env) -> Result<Object, String> {
+fn eval_function(function_name: &String, args: Vec<Object>, env: &mut Env) -> Result<Option<Object>, String> {
     let function = match_first_function(function_name, env.functions.clone());
     if function.is_ok() {
         let evaluated = (function.ok().unwrap().procedure)(args, env);
         match evaluated {
-            Ok(r) => Ok(r),
+            Ok(Some(r)) => Ok(Some(r)),
+            Ok(None) => Ok(None),
             Err(e) => Err(e)
         }
     } else {

@@ -38,7 +38,8 @@ fn main() {
                 Ok(rp) => {
                     let evaluated = rp.eval(&mut stdenv);
                     match evaluated {
-                        Ok(r) => println!("{:?}", r),
+                        Ok(Some(r)) => println!("{:?}", r),
+                        Ok(None) => {},
                         Err(e) => println!("Eval of input: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = input, e = e)
                     }
                 },

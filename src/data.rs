@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use stdlisp::BASE_FUNCTIONS;
 
-pub type LispFn = fn(Vec<Object>, &mut Env) -> Result<Object, String>;
+pub type LispFn = fn(Vec<Object>, &mut Env) -> Result<Option<Object>, String>;
 
 #[derive(Debug, Clone)]
 pub enum Expr {
