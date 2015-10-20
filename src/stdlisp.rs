@@ -74,6 +74,6 @@ fn cons(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
     }
 }
 
-fn exit(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+fn exit(_: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
     Err("rlisp exited successfully.".to_string())
 }

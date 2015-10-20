@@ -11,7 +11,6 @@ mod repl;
 
 use clap::App;
 use data::*;
-use parser::*;
 use repl::repl;
 use eval::run_file;
 

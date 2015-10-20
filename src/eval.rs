@@ -30,10 +30,23 @@ impl Expr {
     pub fn eval(&self, env: &mut Env) -> Result<Option<Object>, String> {
         if let &Expr::Exprs(ref exprs) = self {
             let (head, tail): (&Expr, &[Expr]) = exprs.split_first().unwrap();
-            if let Ok(Some(Object::Symbol(ref function_name))) = head.eval(env) {
+            if let &Expr::Expr(Object::Symbol(ref function_name)) = head {
                 let args = tail.to_vec();
                 if function_name == &"define".to_string() {
-                    
+                    match args.first().unwrap() {
+                        &Expr::Expr(Object::Symbol(ref var)) => {
+                            //define a variable
+                            match args.last().unwrap().clone().eval(env) {
+                                Ok(Some(value)) => env.add_variable(var.clone(), value),
+                                Ok(None) => return Err("Cannot set variable to nonetype".to_string()),
+                                Err(e) => return Err(e),
+                            };
+                        },
+                        &Expr::Exprs(ref fndef) => {
+                            //define a function
+                        },
+                        _ => {}
+                    }
                     Ok(None)
                 } else {
                     let mut evaluated: Vec<Object> = Vec::new();
@@ -52,8 +65,12 @@ impl Expr {
             }
         } else {
             if let &Expr::Expr(ref object) = self {
-                Ok(Some(object.clone()))
-            } else {
+                match object {
+                    &Object::Symbol(ref varname) => Ok(Some(env.get_variable(varname))),
+                    _ => Ok(Some(object.clone()))
+
+                }
+                            } else {
                 Err(format!("Failed to eval {:?}", self))
             }
         }

@@ -1,7 +1,6 @@
 use super::{NAME, VERSION, AUTHOR, INFO};
 use eval::{run_file, run_input};
 use data::*;
-use parser::*;
 use std::io::{self, Write};
 
 //find some way to detect arrow key presses?

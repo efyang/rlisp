@@ -62,7 +62,7 @@ fn tokens_to_expr(tokens: &mut Vec<String>) -> Result<Expr, String> {
         Err("Unexpected )".to_string())
     } else if token == "\"" {
         if !tokens.contains(&"\"".to_string()) {
-            panic!("No end quote.");
+            return Err("No end quote.".to_string());
         }
         let mut s = Vec::new();
         while tokens.last().unwrap().as_str() != "\"" {
