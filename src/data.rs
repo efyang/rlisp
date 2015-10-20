@@ -58,6 +58,9 @@ impl<'a> Env<'a> {
             self.variables.insert(var, value);
         }
     }
+    pub fn add_function(&mut self, function: Function<'a>) {
+        self.functions.push(function);
+    }
     //pub fn change_variable(&mut self, var: String, value: Object) {
         //if !self.variables().keys().any(|x| x == &var) {
             //panic!("Variable {:?} cannot be changed because it does not exist.");

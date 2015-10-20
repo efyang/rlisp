@@ -3,22 +3,26 @@ use data::*;
 impl Expr {
     pub fn eval(&self, env: &mut Env) -> Result<Option<Object>, String> {
         if let &Expr::Exprs(ref exprs) = self {
-            let mut evaluated: Vec<Object> = Vec::new();
-            for expr in exprs.iter() {
-                let evalresult = expr.eval(env);
-                match evalresult {
-                    Ok(Some(r)) => evaluated.push(r),
-                    Ok(None) => {},
-                    Err(_) => return evalresult,
+            let (head, tail): (&Expr, &[Expr]) = exprs.split_first().unwrap();
+            if let Ok(Some(Object::Symbol(ref function_name))) = head.eval(env) {
+                let args = tail.to_vec();
+                if function_name == &"define".to_string() {
+                    
+                    Ok(None)
+                } else {
+                    let mut evaluated: Vec<Object> = Vec::new();
+                    for expr in args.iter() {
+                        let evalresult = expr.eval(env);
+                        match evalresult {
+                            Ok(Some(r)) => evaluated.push(r),
+                            Ok(None) => {},
+                            Err(_) => return evalresult,
+                        }
+                    }
+                    eval_function(function_name, evaluated, env)
                 }
-            }
-            let (head, tail): (&Object, &[Object]) = evaluated.split_first().unwrap();
-            let function_name = head;
-            let args = tail.to_vec();
-            if let &Object::Symbol(ref fn_name) = function_name {
-                eval_function(fn_name, args, env)
             } else {
-                Err(format!("Invalid function name {:?}", function_name))
+                Err(format!("Invalid function name {:?}", head))
             }
         } else {
             if let &Expr::Expr(ref object) = self {
