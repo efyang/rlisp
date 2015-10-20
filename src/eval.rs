@@ -18,10 +18,10 @@ fn run_parsed(original: String, parsed: Result<Expr, String>, env: &mut Env) {
             match evaluated {
                 Ok(Some(r)) => println!("{:?}", r),
                 Ok(None) => {},
-                Err(e) => println!("Eval of input: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = original, e = e)
+                Err(e) => println!("Eval of input: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e} \r\n", input = original, e = e)
             }
         },
-        Err(e) => println!("Parsing of input: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = original, e = e)
+        Err(e) => println!("Parsing of input: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e} \r\n", input = original, e = e)
     }
 
 }
@@ -66,11 +66,16 @@ impl Expr {
         } else {
             if let &Expr::Expr(ref object) = self {
                 match object {
-                    &Object::Symbol(ref varname) => Ok(Some(env.get_variable(varname))),
+                    &Object::Symbol(ref varname) => {
+                        if env.var_exists(varname) {
+                            Ok(Some(env.get_variable(varname)))
+                        } else {
+                            Err(format!("No such variable {}", varname))
+                        }
+                    },
                     _ => Ok(Some(object.clone()))
-
                 }
-                            } else {
+            } else {
                 Err(format!("Failed to eval {:?}", self))
             }
         }

@@ -54,6 +54,9 @@ impl<'a> Env<'a> {
     pub fn get_variable(&self, varname: &String) -> Object {
         self.variables[varname].clone()
     }
+    pub fn var_exists(&self, varname: &String) -> bool {
+        self.variables.contains_key(varname)
+    }
     pub fn add_variable(&mut self, var: String, value: Object) {
         if self.variables().keys().any(|x| x == &var) {
             panic!("Variable {:?} cannot be set because it already exists in current env.");
