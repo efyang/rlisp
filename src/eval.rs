@@ -1,4 +1,30 @@
 use data::*;
+use parser::{parse_file, parse};
+
+pub fn run_file(file: &str, env: &mut Env) {
+    let parsed = parse_file(file);
+    run_parsed(file.to_string(), parsed, env);
+}
+
+pub fn run_input(input: String, env: &mut Env) {
+    let parsed = parse(&input);
+    run_parsed(input, parsed, env);
+}
+
+fn run_parsed(original: String, parsed: Result<Expr, String>, env: &mut Env) {
+    match parsed {
+        Ok(rp) => {
+            let evaluated = rp.eval(env);
+            match evaluated {
+                Ok(Some(r)) => println!("{:?}", r),
+                Ok(None) => {},
+                Err(e) => println!("Eval of input: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = original, e = e)
+            }
+        },
+        Err(e) => println!("Parsing of input: \r\n\r\n{input}\r\n failed with error: \r\n\r\n {e}", input = original, e = e)
+    }
+
+}
 
 impl Expr {
     pub fn eval(&self, env: &mut Env) -> Result<Option<Object>, String> {
