@@ -56,7 +56,7 @@ fn tokens_to_expr(tokens: &mut Vec<String>) -> Result<Expr, String> {
                 Err(_) => return expr
             }
         }
-        //tokens.pop().unwrap();
+        tokens.pop().unwrap();
         Ok(Expr::Exprs(Box::new(remove_spaces(l))))
     } else if token == ")" {
         Err("Unexpected )".to_string())

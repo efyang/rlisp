@@ -44,11 +44,15 @@ impl Expr {
                         },
                         &Expr::Exprs(ref fndef) => {
                             //define a function
+                            println!("{:?}", fndef);
+                            println!("{:?}", args);
                         },
                         _ => {}
                     }
                     Ok(None)
-                } else {
+                } /*else if function_name == &"quote".to_string() {
+                    Ok(Some())
+                }*/ else {
                     let mut evaluated: Vec<Object> = Vec::new();
                     for expr in args.iter() {
                         let evalresult = expr.eval(env);
