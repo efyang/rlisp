@@ -4,6 +4,12 @@ use stdlisp::BASE_FUNCTIONS;
 pub type LispFn = fn(Vec<Object>, &mut Env) -> Result<Option<Object>, String>;
 
 #[derive(Debug, Clone)]
+pub enum Inhibit {
+    Continue,
+    Stop(Option<String>),
+}
+
+#[derive(Debug, Clone)]
 pub enum Expr {
     Expr(Object),
     Exprs(Box<Vec<Expr>>),
@@ -15,18 +21,19 @@ pub enum Object {
     String(String),
     Number(Number),
     List(Box<Vec<Object>>),
+    Exit(Option<String>)
 }
 
 #[derive(Debug, Clone)]
 pub enum Number {
     Int(isize),
-    Float(f64),
+    Float(f64)
 }
 
 #[derive(Clone)]
 pub struct Env<'a> {
     pub functions: Vec<Function<'a>>,
-    pub variables: HashMap<String, Object>,
+    pub variables: HashMap<String, Object>
 }
 
 #[allow(dead_code)]
@@ -68,11 +75,11 @@ impl<'a> Env<'a> {
         self.functions.push(function);
     }
     //pub fn change_variable(&mut self, var: String, value: Object) {
-        //if !self.variables().keys().any(|x| x == &var) {
-            //panic!("Variable {:?} cannot be changed because it does not exist.");
-        //} else {
-            //self.variables[&var] = value;
-        //}
+    //if !self.variables().keys().any(|x| x == &var) {
+    //panic!("Variable {:?} cannot be changed because it does not exist.");
+    //} else {
+    //self.variables[&var] = value;
+    //}
     //}
 }
 

@@ -11,33 +11,41 @@ pub static BASE_FUNCTIONS: &'static [Function<'static>] = &[
 
 //use Result for all of these functions to catch runtime errors
 
-//fn add(args: Vec<Object>, _: &mut Env) -> Result<OptionObject, String> {
-    //let mut numbers = Vec::with_capacity(args.len());
-    //for a in args.iter() {
-        //match get_number(a) {
-            //Ok(r) => numbers.push(r),
-            //Err(e) => return Err(e)
-        //}
-    //}
+//fn add(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+//let mut numbers = Vec::with_capacity(args.len());
+//for a in args.iter() {
+//match get_number(a) {
+//Ok(r) => numbers.push(r),
+//Err(e) => return Err(e)
+//}
+//}
 
-    //Ok(Object::Number(numbers.first().unwrap().clone()))
+//Ok(Object::Number(numbers.first().unwrap().clone()))
 //}
 
 //fn subtract(args: Vec<Object>, env: &mut Env) -> Object {
-    //for object in args.iter() {
+//for object in args.iter() {
 
-    //}
+//}
 //}
 
 //fn get_number(object: &Object) -> Result<Number, String> {
-    //if let &Object::Number(ref n) = object {
-        //Ok(n.clone())
-    //} else {
-        //Err(format!("Object {:?} is not a number.", object))
-    //}
+//if let &Object::Number(ref n) = object {
+//Ok(n.clone())
+//} else {
+//Err(format!("Object {:?} is not a number.", object))
+//}
 //}
 
 //fn define(args: Vec<Object>, env: &mut Env) ->
+
+//fn to_str(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+//if args.len() > 1 {
+//Err("Invalid number of args for to_str. Should be 1.")
+//} else {
+
+//}
+//}
 
 fn list(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
     Ok(Some(Object::List(Box::new(args))))
@@ -46,7 +54,7 @@ fn list(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
 fn cons(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
     if !(args.len() == 2) {
         //invalid arg number
-        Err(format!("Invalid number of arguments for cons."))
+        Err("Invalid number of arguments for cons.".to_string())
     } else {
         let first = args.first().unwrap().clone();
         let last = args.last().unwrap().clone();
@@ -74,6 +82,13 @@ fn cons(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
     }
 }
 
-fn exit(_: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
-    Err("rlisp exited successfully.".to_string())
+fn exit(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+    if args.len() > 1 {
+        Err("Invalid number of arguments for exit.".to_string())
+    } else if args.len() == 1 {
+        // PLACEHOLDER
+        Ok(Some(Object::Exit(Some(format!("{:?}", args[0])))))
+    } else {
+        Ok(Some(Object::Exit(None)))
+    }
 }

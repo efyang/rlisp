@@ -2,7 +2,7 @@ use data::*;
 use std::fs::File;
 use std::io::prelude::*;
 
-pub fn parse_file(filename: &str) -> Result<Expr, String> {
+pub fn parse_file(filename: &str) -> Result<Vec<Expr>, String> {
     let mut f: File;
     match File::open(filename) {
         Ok(r) => f = r,
@@ -16,7 +16,7 @@ pub fn parse_file(filename: &str) -> Result<Expr, String> {
     return parse(&s)
 }
 
-pub fn parse(data: &String) -> Result<Expr, String> {
+pub fn parse(data: &String) -> Result<Vec<Expr>, String> {
     let parens = count_parens(data);
     if parens.0 != parens.1 {
         return Err("One or more unmatched parentheses.".to_string())
@@ -26,12 +26,21 @@ pub fn parse(data: &String) -> Result<Expr, String> {
         .rev()
         .map(|t| t.clone())
         .collect::<Vec<String>>();
-    tokens_to_expr(&mut tokens)
+    let mut exprs = Vec::new();
+    while tokens.len() > 0 {
+        exprs.push(try!(tokens_to_expr(&mut tokens)));
+        for i in (0..tokens.len()).rev() {
+            if tokens[i] == " " {
+                tokens.remove(i);
+            }
+        }
+    }
+    Ok(exprs)
 }
 
 fn count_parens(data: &String) -> (usize, usize) {
     data.chars()
-        .fold((0usize, 0usize),
+        .fold((0, 0),
         |acc, item| {
             match item {
                 '(' => (acc.0 + 1, acc.1),
@@ -80,16 +89,16 @@ fn remove_spaces(l: Vec<Expr>) -> Vec<Expr> {
     let space = " ".to_string();
     let data = l.iter()
         .filter(|&x| {
-        if let &Expr::Expr(Object::Symbol(ref s)) = x {
-            if s == &space {
-                false
+            if let &Expr::Expr(Object::Symbol(ref s)) = x {
+                if s == &space {
+                    false
+                } else {
+                    true
+                }
             } else {
                 true
-            }
-        } else {
-            true
-        }})
-        .map(|x| x.clone())
+            }})
+    .map(|x| x.clone())
         .collect::<Vec<Expr>>();
     data
 }
