@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use stdlisp::BASE_FUNCTIONS;
+use std::sync::Arc;
 
 pub type LispFn = fn(Vec<Object>, &mut Env) -> Result<Option<Object>, String>;
 
@@ -15,6 +16,15 @@ pub enum Expr {
     Exprs(Box<Vec<Expr>>),
 }
 
+impl Expr {
+    pub fn unwrap_expr(&self) -> Option<&Object> {
+        match *self {
+            Expr::Expr(ref object) => Some(object),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Object {
     Symbol(String),
@@ -22,6 +32,15 @@ pub enum Object {
     Number(Number),
     List(Box<Vec<Object>>),
     Exit(Option<String>)
+}
+
+impl Object {
+    pub fn unwrap_symbol(&self) -> Option<&str> {
+        match *self {
+            Object::Symbol(ref name) => Some(name),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -74,17 +93,31 @@ impl<'a> Env<'a> {
     pub fn add_function(&mut self, function: Function<'a>) {
         self.functions.push(function);
     }
-    //pub fn change_variable(&mut self, var: String, value: Object) {
-    //if !self.variables().keys().any(|x| x == &var) {
-    //panic!("Variable {:?} cannot be changed because it does not exist.");
-    //} else {
-    //self.variables[&var] = value;
-    //}
-    //}
+    pub fn set_variable(&mut self, var: String, value: Object) {
+        if !self.variables().keys().any(|x| x == &var) {
+            panic!("Variable {:?} cannot be changed because it does not exist.");
+        } else {
+            *self.variables.get_mut(&var).unwrap() = value;
+        }
+    }
 }
 
 #[derive(Clone)]
 pub struct Function<'a> {
-    pub name: &'static str,
-    pub procedure: &'a LispFn,
+    pub name: &'a str,
+    pub procedure: Arc<LispFn>,
+}
+
+//TODO
+impl<'a> Function<'a> {
+    fn from_exprs(name: &'a str, declaration_vars: &[Expr], body: &[Expr]) -> Result<Function<'a>, String> {
+        let unknown_fn = |args: Vec<Object>, env: &mut Env| -> Result<Option<Object>, String> {
+            Ok(None)
+        };
+
+        Ok(Function {
+            name: name,
+            procedure: Arc::new(unknown_fn as LispFn),
+        })
+    }
 }

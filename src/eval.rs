@@ -52,38 +52,52 @@ impl Expr {
                 if let Expr::Expr(Object::Symbol(ref function_name)) = *head {
                     let args = tail.to_vec();
                     if function_name == "define" {
-                        match *args.first().unwrap() {
+                        let (first, rest) = args.split_first().unwrap();
+                        match *first {
                             Expr::Expr(Object::Symbol(ref var)) => {
                                 //define a variable
                                 match args.last().unwrap().clone().eval(env) {
-                                    Ok(Some(value)) => env.add_variable(var.clone(), value),
+                                    Ok(Some(value)) => {
+                                        env.add_variable(var.clone(), value);
+                                        return Ok(None);
+                                    },
                                     Ok(None) => return Err("Cannot set variable to nonetype".to_string()),
                                     Err(e) => return Err(e),
                                 };
                             },
+                            Expr::Expr(ref tried_ident) => {
+                                return Err(format!("Invalid variable identifier \"{:?}\"", tried_ident));
+                            },
                             Expr::Exprs(ref fndef) => {
                                 //define a function
+                                //TODO
                                 println!("{:?}", fndef);
-                                println!("{:?}", args);
+                                if args.len() < 2 {
+                                    return Err(format!("Function body of function {:?} too short", fndef[0]));
+                                } else {
+                                    println!("{:?}", rest);
+                                    return Ok(None);
+                                }
                             },
-                            _ => {}
                         }
                         Ok(None)
-                    } /*else if function_name == &"quote".to_string() {
-                        Ok(Some())
-                        }*/ else {
-                            let mut evaluated: Vec<Object> = Vec::new();
-                            for expr in args.iter() {
-                                let evalresult = expr.eval(env);
-                                match evalresult {
-                                    Ok(Some(Object::Exit(_))) => return evalresult,
-                                    Ok(Some(r)) => evaluated.push(r),
-                                    Ok(None) => {},
-                                    Err(_) => return evalresult,
-                                }
+                    }
+                    /*else if function_name == &"quote".to_string() {
+                      Ok(Some())
+                      }*/
+                    else {
+                        let mut evaluated: Vec<Object> = Vec::new();
+                        for expr in args.iter() {
+                            let evalresult = expr.eval(env);
+                            match evalresult {
+                                Ok(Some(Object::Exit(_))) => return evalresult,
+                                Ok(Some(r)) => evaluated.push(r),
+                                Ok(None) => {},
+                                Err(_) => return evalresult,
                             }
-                            eval_function(function_name, evaluated, env)
                         }
+                        eval_function(function_name, evaluated, env)
+                    }
                 } else {
                     Err(format!("Invalid function name {:?}", head))
                 }

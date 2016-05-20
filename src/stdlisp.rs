@@ -1,14 +1,16 @@
 #![allow(dead_code)]
 use data::*;
+use std::sync::Arc;
 
-pub static BASE_FUNCTIONS: &'static [Function<'static>] = &[
-    //Function {name: "+", procedure: &(add as LispFn)},
-    //Function {name: "-", procedure: &(subtract as fn(Vec<Object>, &mut Env) -> Object)},
-    Function {name: "list", procedure: &(list as LispFn)},
-    Function {name: "cons", procedure: &(cons as LispFn)},
-    Function {name: "exit", procedure: &(exit as LispFn)},
-];
-
+lazy_static! {
+    pub static ref BASE_FUNCTIONS: [Function<'static>; 3] = [
+        //Function {name: "+", procedure: &(add as LispFn)},
+        //Function {name: "-", procedure: &(subtract as fn(Vec<Object>, &mut Env) -> Object)},
+        Function {name: "list", procedure: Arc::new(list as LispFn)},
+        Function {name: "cons", procedure: Arc::new(cons as LispFn)},
+        Function {name: "exit", procedure: Arc::new(exit as LispFn)},
+    ];
+}
 //use Result for all of these functions to catch runtime errors
 
 //fn add(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {

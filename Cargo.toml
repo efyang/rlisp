@@ -1,7 +1,8 @@
 [package]
+authors = ["Edward Yang <edward.yang6771@gmail.com>"]
 name = "rlisp"
 version = "0.1.0"
-authors = ["Edward Yang <edward.yang6771@gmail.com>"]
 
 [dependencies]
 clap = "1.4.5"
+lazy_static = "0.2.1"
