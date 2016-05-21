@@ -1,5 +1,6 @@
 use data::*;
 use parser::{parse_file, parse};
+use std::collections::HashMap;
 
 #[cfg(windows)]
 const NEWL: &'static str = "{nl}";
@@ -71,12 +72,18 @@ impl Expr {
                             Expr::Exprs(ref fndef) => {
                                 //define a function
                                 //TODO
-                                println!("{:?}", fndef);
                                 if args.len() < 2 {
                                     return Err(format!("Function body of function {:?} too short", fndef[0]));
                                 } else {
-                                    println!("{:?}", rest);
-                                    return Ok(None);
+                                    if let Expr::Expr(Object::Symbol(ref fn_name)) = fndef[0] {
+                                        let fnargs = &fndef[1..fndef.len()];
+                                        let body = rest;
+                                        let function = try!(Function::from_exprs(fn_name, fnargs, body));
+                                        env.add_function(function);
+                                        return Ok(None);
+                                    } else {
+                                        return Err(format!("Invalid function identifier {:?}", fndef[0]));
+                                    }
                                 }
                             },
                         }
@@ -121,26 +128,53 @@ impl Expr {
 fn eval_function(function_name: &String, args: Vec<Object>, env: &mut Env) -> Result<Option<Object>, String> {
     let function = match_first_function(function_name, env.functions.clone());
     if function.is_ok() {
-        let evaluated = (function.ok().unwrap().procedure)(args, env);
-        match evaluated {
-            Ok(Some(r)) => Ok(Some(r)),
-            Ok(None) => Ok(None),
-            Err(e) => Err(e)
+        match *function.ok().unwrap().procedure {
+            LispFn::Builtin(ref innerfn) => {
+                let evaluated = (innerfn)(args, env);
+                match evaluated {
+                    Ok(Some(r)) => Ok(Some(r)),
+                    Ok(None) => Ok(None),
+                    Err(e) => Err(e)
+                }
+            }
+            LispFn::UserDef(ref vars, ref body) => {
+                if args.len() != vars.len() {
+                    Err(format!("Function {:?} run with {} args; should be run with {} args", function_name, args.len(), vars.len()))
+                } else {
+                    let mut var_mappings = HashMap::new();
+                    // arg -> arg_mapping
+                    for (var, var_mapping) in vars.iter().zip(args.iter()) {
+                        var_mappings.insert(var, var_mapping);
+                    }
+                    let newbody = body
+                        .iter()
+                        .map(|ref expr| expr.replace_all(&var_mappings))
+                        .collect::<Vec<_>>();
+                    if newbody.len() > 1 {
+                        let (final_expr, leading_exprs) = body.split_last().unwrap();
+                        for expr in leading_exprs {
+                            try!(expr.replace_all(&var_mappings).eval(env));
+                        }
+                        final_expr.replace_all(&var_mappings).eval(env)
+                    } else {
+                        newbody.first()
+                            .unwrap()
+                            .replace_all(&var_mappings)
+                            .eval(env)
+                    }
+                }
+            }
         }
     } else {
         Err(function.err().unwrap())
     }
 }
 
-fn match_first_function<'a>(function_name: &String, functions: Vec<Function<'a>>) -> Result<Function<'a>, String> {
-    if functions.is_empty() {
-        return Err(format!("No such function {:?}", function_name));
+fn match_first_function<'a>(function_name: &str, functions: Vec<Function>) -> Result<Function, String> {
+    for function in functions {
+        if function.name == function_name {
+            return Ok(function.clone())
+        }
     }
-    let (head, tail): (&Function, &[Function]) = functions.split_first().unwrap();
-    let current = head;
-    if &current.name.to_string() == function_name {
-        Ok(current.clone())
-    } else {
-        match_first_function(function_name, tail.to_vec())
-    }
+    Err(format!("No such function {:?}", function_name))
 }

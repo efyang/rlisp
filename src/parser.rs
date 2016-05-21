@@ -106,11 +106,11 @@ fn remove_spaces(l: Vec<Expr>) -> Vec<Expr> {
 fn atomize(token: String) -> Object {
     if token.contains('.') {
         match token.parse::<f64>() {
-            Ok(f) => Object::Number(Number::Float(f)),
+            Ok(f) => Object::Number(Number::Float(f, token.to_string())),
             _ => Object::Symbol(token),
         }
     } else {
-        match token.parse::<isize>() {
+        match token.parse::<i64>() {
             Ok(i) => Object::Number(Number::Int(i)),
             _ => Object::Symbol(token),
         }

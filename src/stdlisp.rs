@@ -2,16 +2,24 @@
 use data::*;
 use std::sync::Arc;
 
+macro_rules! generate_base_fn {
+    ($fnname:ident, $name:ident) => {
+        Function {name: stringify!($fnname).to_string(), procedure: Arc::new(LispFn::Builtin($name as BuiltinFn))}
+    }
+}
+
+macro_rules! generate_normal_base_fn {
+    ($name:ident) => {generate_base_fn!($name, $name)}
+}
+
 lazy_static! {
-    pub static ref BASE_FUNCTIONS: [Function<'static>; 3] = [
-        //Function {name: "+", procedure: &(add as LispFn)},
-        //Function {name: "-", procedure: &(subtract as fn(Vec<Object>, &mut Env) -> Object)},
-        Function {name: "list", procedure: Arc::new(list as LispFn)},
-        Function {name: "cons", procedure: Arc::new(cons as LispFn)},
-        Function {name: "exit", procedure: Arc::new(exit as LispFn)},
+    pub static ref BASE_FUNCTIONS: [Function; 4] = [
+        generate_normal_base_fn!(list),
+        generate_normal_base_fn!(cons),
+        generate_normal_base_fn!(print),
+        generate_normal_base_fn!(exit),
     ];
 }
-//use Result for all of these functions to catch runtime errors
 
 //fn add(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
 //let mut numbers = Vec::with_capacity(args.len());
@@ -81,6 +89,15 @@ fn cons(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
                 Ok(Some(Object::List(Box::new(args))))
             }
         }
+    }
+}
+
+fn print(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+    if args.len() != 1 {
+        Err("Invalid number of args for print".to_string())
+    } else {
+        println!("{:?}", args[0]);
+        Ok(None)
     }
 }
 
