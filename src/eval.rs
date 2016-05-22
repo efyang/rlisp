@@ -45,8 +45,27 @@ fn run_parsed(original: String, parsed: Result<Vec<Expr>, String>, env: &mut Env
     return Inhibit::Continue;
 }
 
-impl Expr {
-    pub fn eval(&self, env: &mut Env) -> Result<Option<Object>, String> {
+pub trait Eval {
+    fn eval(&self, _: &mut Env) -> Result<Option<Object>, String>;
+}
+
+impl Eval for Vec<Expr> {
+    fn eval(&self, env: &mut Env) -> Result<Option<Object>, String> {
+        if self.len() != 0 {
+            if self.len() != 1 {
+                for i in 0..self.len() - 1 {
+                    try!(self[i].eval(env));
+                }
+            }
+            self[self.len() - 1].eval(env)
+        } else {
+            Err("Cannot eval empty list of exprs".to_string())
+        }
+    }
+}
+
+impl Eval for Expr {
+    fn eval(&self, env: &mut Env) -> Result<Option<Object>, String> {
         match *self {
             Expr::Exprs(ref exprs) => {
                 let (head, tail): (&Expr, &[Expr]) = exprs.split_first().unwrap();

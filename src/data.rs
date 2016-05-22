@@ -11,7 +11,7 @@ pub enum Inhibit {
     Stop(Option<String>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Expr {
     Expr(Object),
     Exprs(Box<Vec<Expr>>),
@@ -27,6 +27,12 @@ impl Expr {
 
     pub fn replace_all(&self, replacement_hm: &HashMap<&Object, &Object>) -> Expr {
         match *self {
+            Expr::Expr(Object::ConditionalCase(ref case, ref body)) => {
+                Expr::Expr(Object::ConditionalCase(
+                        Box::new((**case).replace_all(replacement_hm)),
+                        body.iter().map(|e| (*e).replace_all(replacement_hm)).collect::<Vec<_>>()
+                        ))
+            }
             Expr::Expr(ref object) => {
                 if let Some(replacement) = replacement_hm.get(object) {
                     Expr::Expr((*replacement).clone())
@@ -49,7 +55,9 @@ pub enum Object {
     Symbol(String),
     String(String),
     Number(Number),
+    Boolean(Boolean),
     List(Box<Vec<Object>>),
+    ConditionalCase(Box<Expr>, Vec<Expr>),
     Exit(Option<String>)
 }
 
@@ -61,6 +69,12 @@ pub enum Object {
         //}
     //}
 //}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum Boolean {
+    True,
+    False
+}
 
 #[derive(Debug, Clone)]
 pub enum Number {

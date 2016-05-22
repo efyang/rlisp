@@ -69,6 +69,29 @@ fn tokens_to_expr(tokens: &mut Vec<String>) -> Result<Expr, String> {
         Ok(Expr::Exprs(Box::new(remove_spaces(l))))
     } else if token == ")" {
         Err("Unexpected )".to_string())
+    } else if token == "[" {
+        let mut l = Vec::new();
+        while tokens.last().unwrap().as_str() != "]" {
+            let expr = tokens_to_expr(tokens);
+            match expr {
+                Ok(r) => l.push(r),
+                Err(_) => return expr
+            }
+        }
+        tokens.pop().unwrap();
+        l = remove_spaces(l);
+        if l.len() < 2 {
+            Err("Conditional missing body or case declarations".to_string())
+        } else {
+            let ref case = l[0];
+            let ref body = l[1..];
+            Ok(Expr::Expr(Object::ConditionalCase(
+                        Box::new((*case).clone()),
+                        body.iter().map(|e| (*e).clone()).collect::<Vec<_>>()
+            )))
+        }
+    } else if token == "]" {
+        Err("Unexpected ]".to_string())
     } else if token == "\"" {
         if !tokens.contains(&"\"".to_string()) {
             return Err("No end quote.".to_string());
@@ -86,11 +109,10 @@ fn tokens_to_expr(tokens: &mut Vec<String>) -> Result<Expr, String> {
 }
 
 fn remove_spaces(l: Vec<Expr>) -> Vec<Expr> {
-    let space = " ".to_string();
     let data = l.iter()
         .filter(|&x| {
             if let &Expr::Expr(Object::Symbol(ref s)) = x {
-                if s == &space {
+                if s == " " {
                     false
                 } else {
                     true
@@ -112,15 +134,38 @@ fn atomize(token: String) -> Object {
     } else {
         match token.parse::<i64>() {
             Ok(i) => Object::Number(Number::Int(i)),
-            _ => Object::Symbol(token),
+            _ => {
+                if &token == "true" {
+                    Object::Boolean(Boolean::True)
+                } else if &token == "false" {
+                    Object::Boolean(Boolean::False)
+                } else {
+                    Object::Symbol(token)  
+                }
+            },
         }
     }
 }
 
+//const RESERVED_KEYWORDS: [&'static str; 8] = [
+    //"list",
+    //"cons",
+    //"print",
+    //"exit",
+    //"define",
+    //"true",
+    //"false",
+    //"cond"
+//];
+
 fn tokenize(data: &String) -> Vec<String> {
-    let newdata = data.replace("(", " ( ")
+    // needs to be fixed so that parens inside quotes are not replaced
+    let newdata = data
+        .replace("(", " ( ")
         .replace(")", " ) ")
         .replace("\"", " \" ")
+        .replace("[", " [ ")
+        .replace("]", " ] ")
         .split_whitespace()
         .map(|s| s.to_string())
         .collect::<Vec<String>>();
