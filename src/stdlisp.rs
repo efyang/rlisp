@@ -4,23 +4,23 @@ use std::sync::Arc;
 use eval::Eval;
 
 macro_rules! generate_base_fn {
-    ($fnname:ident, $name:ident) => {
-        Function {name: stringify!($fnname).to_string(), procedure: Arc::new(LispFn::Builtin($name as BuiltinFn))}
+    ($fnname:expr, $name:ident) => {
+        ($fnname, Function {procedure: Arc::new(LispFn::Builtin(BuiltinFn {name: $fnname.to_string(), inner: $name}))})
     }
 }
 
 macro_rules! generate_normal_base_fn {
-    ($name:ident) => {generate_base_fn!($name, $name)}
+    ($name:ident) => {generate_base_fn!(stringify!($name), $name)}
 }
 
 lazy_static! {
-    pub static ref BASE_FUNCTIONS: [Function; 6] = [
+    pub static ref BASE_FUNCTIONS: [(&'static str, Function); 6] = [
         generate_normal_base_fn!(list),
         generate_normal_base_fn!(cons),
         generate_normal_base_fn!(print),
         generate_normal_base_fn!(exit),
         generate_normal_base_fn!(cond),
-        Function {name: "=".to_string(), procedure: Arc::new(LispFn::Builtin(equals as BuiltinFn))}
+        generate_base_fn!("=", equals)
     ];
 }
 

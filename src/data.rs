@@ -2,8 +2,7 @@ use std::collections::HashMap;
 use stdlisp::BASE_FUNCTIONS;
 use std::sync::Arc;
 use std::hash::{Hash, Hasher};
-
-pub type BuiltinFn = fn(Vec<Object>, &mut Env) -> Result<Option<Object>, String>;
+use std::fmt;
 
 #[derive(Debug, Clone)]
 pub enum Inhibit {
@@ -58,6 +57,7 @@ pub enum Object {
     Boolean(Boolean),
     List(Box<Vec<Object>>),
     ConditionalCase(Box<Expr>, Vec<Expr>),
+    Function(LispFn),
     Exit(Option<String>)
 }
 
@@ -114,7 +114,7 @@ impl PartialEq for Number {
 
 #[derive(Clone)]
 pub struct Env {
-    pub functions: Vec<Function>,
+    //pub functions: Vec<Function>,
     pub variables: HashMap<String, Object>
 }
 
@@ -122,16 +122,28 @@ pub struct Env {
 impl Env {
     pub fn new() -> Env {
         Env {
-            functions: BASE_FUNCTIONS.to_vec(),
-            variables: HashMap::new(),
+            variables: {
+                let mut hm = HashMap::new();
+                for (name, func) in BASE_FUNCTIONS.iter() {
+                    hm.insert(name, Object::Function(func));
+                }
+                hm
+            }
         }
     }
-    pub fn with_functions(functions: Vec<Function>) -> Env {
+    pub fn with_functions(functions: Vec<(String, Function)>) -> Env {
         let mut funcs: Vec<Function> = BASE_FUNCTIONS.to_vec().clone();
-        funcs.clone_from_slice(&functions);
         Env {
-            functions: funcs,
-            variables: HashMap::new(),
+            variables: {
+                let mut hm = HashMap::new();
+                for (name, func) in BASE_FUNCTIONS.iter() {
+                    hm.insert(name, Object::Function(func));
+                }
+                for (name, func) in functions {
+                    hm.insert(name, Object::Function(func))
+                }
+                hm
+            }
         }
     }
     pub fn functions(&self) -> Vec<Function> {
@@ -153,9 +165,6 @@ impl Env {
             self.variables.insert(var, value);
         }
     }
-    pub fn add_function(&mut self, function: Function) {
-        self.functions.push(function);
-    }
     pub fn set_variable(&mut self, var: String, value: Object) {
         if !self.variables().keys().any(|x| x == &var) {
             panic!("Variable {:?} cannot be changed because it does not exist.");
@@ -165,14 +174,56 @@ impl Env {
     }
 }
 
+pub struct BuiltinFn {
+    name: String,
+    inner: fn(Vec<Object>, &mut Env) -> Result<Option<Object>, String>
+}
+
+impl BuiltinFn {
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+impl Hash for BuiltinFn {
+    fn hash<SipHasher>(&self, state: &mut SipHasher) where SipHasher: Hasher {
+        self.name().hash(state);
+    }
+}
+
+impl Eq for BuiltinFn {}
+
+impl PartialEq for BuiltinFn {
+    fn eq(&self, other: &BuiltinFn) -> bool {
+        self.name() == other.name()
+    }
+}
+
+impl Clone for BuiltinFn {
+    fn clone(&self) -> Self {
+        BuiltinFn {
+            name: self.name.clone(),
+            inner: self.inner
+        }
+    }
+}
+
+impl fmt::Debug for BuiltinFn {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "BuiltinFn {{name: {}}}", self.name)
+    }
+}
+
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum LispFn {
     Builtin(BuiltinFn),
     UserDef(Vec<Object>, Vec<Expr>), // input vars, body
 }
 
-#[derive(Clone)]
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Function {
-    pub name: String,
     pub procedure: Arc<LispFn>,
 }
 
@@ -193,7 +244,6 @@ impl Function {
             }
         }
         Ok(Function {
-            name: name.to_string(),
             procedure: Arc::new(LispFn::UserDef(
                 vars,
                 body.iter().map(|ref e| (*e).clone()).collect::<Vec<Expr>>()
