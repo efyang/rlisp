@@ -57,7 +57,7 @@ pub enum Object {
     Boolean(Boolean),
     List(Box<Vec<Object>>),
     ConditionalCase(Box<Expr>, Vec<Expr>),
-    Function(LispFn),
+    Function(Function),
     Exit(Option<String>)
 }
 
@@ -114,7 +114,6 @@ impl PartialEq for Number {
 
 #[derive(Clone)]
 pub struct Env {
-    //pub functions: Vec<Function>,
     pub variables: HashMap<String, Object>
 }
 
@@ -124,30 +123,26 @@ impl Env {
         Env {
             variables: {
                 let mut hm = HashMap::new();
-                for (name, func) in BASE_FUNCTIONS.iter() {
-                    hm.insert(name, Object::Function(func));
+                for &(name, ref func) in BASE_FUNCTIONS.iter() {
+                    hm.insert(name.to_string(), Object::Function((*func).clone()));
                 }
                 hm
             }
         }
     }
     pub fn with_functions(functions: Vec<(String, Function)>) -> Env {
-        let mut funcs: Vec<Function> = BASE_FUNCTIONS.to_vec().clone();
         Env {
             variables: {
                 let mut hm = HashMap::new();
-                for (name, func) in BASE_FUNCTIONS.iter() {
-                    hm.insert(name, Object::Function(func));
+                for &(name, ref func) in BASE_FUNCTIONS.iter() {
+                    hm.insert(name.to_string(), Object::Function((*func).clone()));
                 }
                 for (name, func) in functions {
-                    hm.insert(name, Object::Function(func))
+                    hm.insert(name, Object::Function(func));
                 }
                 hm
             }
         }
-    }
-    pub fn functions(&self) -> Vec<Function> {
-        self.functions.clone()
     }
     pub fn variables(&self) -> HashMap<String, Object> {
         self.variables.clone()
@@ -174,14 +169,31 @@ impl Env {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub enum LispFn {
+    Builtin(BuiltinFn),
+    UserDef(Vec<Object>, Vec<Expr>), // input vars, body
+}
+
+pub type BuiltinFnSignature = fn(Vec<Object>, &mut Env) -> Result<Option<Object>, String>;
+
 pub struct BuiltinFn {
     name: String,
-    inner: fn(Vec<Object>, &mut Env) -> Result<Option<Object>, String>
+    inner: BuiltinFnSignature
 }
 
 impl BuiltinFn {
+    pub fn new(name: &str, func: BuiltinFnSignature) -> BuiltinFn {
+        BuiltinFn {
+            name: name.to_string(),
+            inner: func
+        }
+    }
     fn name(&self) -> &str {
         &self.name
+    }
+    pub fn inner(&self) -> BuiltinFnSignature {
+        self.inner
     }
 }
 
@@ -214,14 +226,6 @@ impl fmt::Debug for BuiltinFn {
     }
 }
 
-
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
-pub enum LispFn {
-    Builtin(BuiltinFn),
-    UserDef(Vec<Object>, Vec<Expr>), // input vars, body
-}
-
-
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Function {
     pub procedure: Arc<LispFn>,
@@ -229,7 +233,7 @@ pub struct Function {
 
 //TODO
 impl Function {
-    pub fn from_exprs(name: &str, declaration_vars: &[Expr], body: &[Expr]) -> Result<Function, String> {
+    pub fn from_exprs(declaration_vars: &[Expr], body: &[Expr]) -> Result<Function, String> {
         let mut vars = Vec::new();
         for var in declaration_vars {
             match var.unwrap_expr() {

@@ -97,8 +97,8 @@ impl Eval for Expr {
                                     if let Expr::Expr(Object::Symbol(ref fn_name)) = fndef[0] {
                                         let fnargs = &fndef[1..fndef.len()];
                                         let body = rest;
-                                        let function = try!(Function::from_exprs(fn_name, fnargs, body));
-                                        env.add_function(function);
+                                        let function = try!(Function::from_exprs(fnargs, body));
+                                        env.add_variable(fn_name.to_string(), Object::Function(function));
                                         return Ok(None);
                                     } else {
                                         return Err(format!("Invalid function identifier {:?}", fndef[0]));
@@ -145,11 +145,11 @@ impl Eval for Expr {
 }
 
 fn eval_function(function_name: &String, args: Vec<Object>, env: &mut Env) -> Result<Option<Object>, String> {
-    let function = match_first_function(function_name, env.functions.clone());
+    let function = match_first_function(function_name, env.variables());
     if function.is_ok() {
         match *function.ok().unwrap().procedure {
             LispFn::Builtin(ref innerfn) => {
-                let evaluated = (innerfn)(args, env);
+                let evaluated = (innerfn.inner())(args, env);
                 match evaluated {
                     Ok(Some(r)) => Ok(Some(r)),
                     Ok(None) => Ok(None),
@@ -189,11 +189,14 @@ fn eval_function(function_name: &String, args: Vec<Object>, env: &mut Env) -> Re
     }
 }
 
-fn match_first_function<'a>(function_name: &str, functions: Vec<Function>) -> Result<Function, String> {
-    for function in functions {
-        if function.name == function_name {
-            return Ok(function.clone())
+fn match_first_function<'a>(function_name: &str, vars: HashMap<String, Object>) -> Result<Function, String> {
+    for (var, object) in vars.iter() {
+        if var == function_name {
+            if let &Object::Function(ref func) = object {
+                return Ok((*func).clone());
+            }
         }
+        
     }
     Err(format!("No such function {:?}", function_name))
 }

@@ -5,7 +5,7 @@ use eval::Eval;
 
 macro_rules! generate_base_fn {
     ($fnname:expr, $name:ident) => {
-        ($fnname, Function {procedure: Arc::new(LispFn::Builtin(BuiltinFn {name: $fnname.to_string(), inner: $name}))})
+        ($fnname, Function {procedure: Arc::new(LispFn::Builtin(BuiltinFn::new($fnname, $name)))})
     }
 }
 
