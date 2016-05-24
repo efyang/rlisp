@@ -54,57 +54,63 @@ fn tokens_to_expr(tokens: &mut Vec<String>) -> Result<Expr, String> {
     if tokens.is_empty() {
         return Err("No tokens to parse.".to_string())
     }
-    let token: String;
-    token = tokens.pop().unwrap();
-    if token == "(" {
-        let mut l = Vec::new();
-        while tokens.last().unwrap().as_str() != ")" {
-            let expr = tokens_to_expr(tokens);
-            match expr {
-                Ok(r) => l.push(r),
-                Err(_) => return expr
+    let token = tokens.pop().unwrap();
+    match token.as_str() {
+        "(" => {
+            let mut l = Vec::new();
+            while tokens.last().unwrap().as_str() != ")" {
+                let expr = tokens_to_expr(tokens);
+                match expr {
+                    Ok(r) => l.push(r),
+                    Err(_) => return expr
+                }
+            }
+            tokens.pop().unwrap();
+            Ok(Expr::Exprs(Box::new(remove_spaces(l))))
+        }
+        ")" => {
+            Err("Unexpected )".to_string())
+        }
+        "[" => {
+            let mut l = Vec::new();
+            while tokens.last().unwrap().as_str() != "]" {
+                let expr = tokens_to_expr(tokens);
+                match expr {
+                    Ok(r) => l.push(r),
+                    Err(_) => return expr
+                }
+            }
+            tokens.pop().unwrap();
+            l = remove_spaces(l);
+            if l.len() < 2 {
+                Err("Conditional missing body or case declarations".to_string())
+            } else {
+                let ref case = l[0];
+                let ref body = l[1..];
+                Ok(Expr::Expr(Object::ConditionalCase(
+                            Box::new((*case).clone()),
+                            body.iter().map(|e| (*e).clone()).collect::<Vec<_>>()
+                )))
             }
         }
-        tokens.pop().unwrap();
-        Ok(Expr::Exprs(Box::new(remove_spaces(l))))
-    } else if token == ")" {
-        Err("Unexpected )".to_string())
-    } else if token == "[" {
-        let mut l = Vec::new();
-        while tokens.last().unwrap().as_str() != "]" {
-            let expr = tokens_to_expr(tokens);
-            match expr {
-                Ok(r) => l.push(r),
-                Err(_) => return expr
+        "]" => {
+            Err("Unexpected ]".to_string())
+        }
+        "\"" => {
+            if !tokens.contains(&"\"".to_string()) {
+                return Err("No end quote.".to_string());
             }
+            let mut s = Vec::new();
+            while tokens.last().unwrap().as_str() != "\"" {
+                s.push(tokens.pop().unwrap());
+            }
+            tokens.pop().unwrap();
+            s.pop().unwrap();
+            Ok(Expr::Expr(Object::String(s.split_first().unwrap().1.concat())))
         }
-        tokens.pop().unwrap();
-        l = remove_spaces(l);
-        if l.len() < 2 {
-            Err("Conditional missing body or case declarations".to_string())
-        } else {
-            let ref case = l[0];
-            let ref body = l[1..];
-            Ok(Expr::Expr(Object::ConditionalCase(
-                        Box::new((*case).clone()),
-                        body.iter().map(|e| (*e).clone()).collect::<Vec<_>>()
-            )))
+        _ => {
+            Ok(Expr::Expr(atomize(token)))
         }
-    } else if token == "]" {
-        Err("Unexpected ]".to_string())
-    } else if token == "\"" {
-        if !tokens.contains(&"\"".to_string()) {
-            return Err("No end quote.".to_string());
-        }
-        let mut s = Vec::new();
-        while tokens.last().unwrap().as_str() != "\"" {
-            s.push(tokens.pop().unwrap());
-        }
-        tokens.pop().unwrap();
-        s.pop().unwrap();
-        Ok(Expr::Expr(Object::String(s.split_first().unwrap().1.concat())))
-    } else {
-        Ok(Expr::Expr(atomize(token)))
     }
 }
 
