@@ -3,6 +3,8 @@ use stdlisp::BASE_FUNCTIONS;
 use std::sync::Arc;
 use std::hash::{Hash, Hasher};
 use std::fmt;
+use std::ops::{AddAssign, DivAssign, MulAssign, SubAssign, RemAssign};
+use std::ops::{Add, Sub, Mul, Div, Rem};
 
 #[derive(Debug, Clone)]
 pub enum Inhibit {
@@ -61,19 +63,56 @@ pub enum Object {
     Exit(Option<String>)
 }
 
-//impl Object {
+impl Object {
     //pub fn unwrap_symbol(&self) -> Option<&str> {
         //match *self {
             //Object::Symbol(ref name) => Some(name),
             //_ => None,
         //}
     //}
-//}
+    pub fn unwrap_boolean(&self) -> Option<&Boolean> {
+        match *self {
+            Object::Boolean(ref boolean) => Some(boolean),
+            _ => None,
+        }
+    }
+    pub fn unwrap_number(&self) -> Option<&Number> {
+        match *self {
+            Object::Number(ref number) => Some(number),
+            _ => None,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Boolean {
     True,
     False
+}
+
+impl Into<bool> for Boolean {
+    fn into(self) -> bool {
+        match self {
+            Boolean::True => true,
+            Boolean::False => false,
+        }
+    }
+}
+
+impl Into<Boolean> for bool {
+    fn into(self) -> Boolean {
+        if self {
+            Boolean::True
+        } else {
+            Boolean::False
+        }
+    }
+}
+
+impl Into<Object> for bool {
+    fn into(self) -> Object {
+        Object::Boolean(self.into())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -82,13 +121,53 @@ pub enum Number {
     Float(f64, String) // store the string for hashing and partialeq
 }
 
+macro_rules! gen_assign_fn {
+    ( $assign:ty, $fnname:ident, $op:ident ) => {
+        impl $assign for Number {
+            fn $fnname(&mut self, other: Number) {
+                match *self {
+                    Number::Int(i) => {
+                        match other {
+                            Number::Int(oi) => {
+                                *self = Number::Int(i.$op(oi));
+                            }
+                            Number::Float(of, _) => {
+                                let after_op = (i as f64).$op(of);
+                                *self = Number::Float(after_op, after_op.to_string());
+                            }
+                        }
+                    }
+                    Number::Float(f, _) => {
+                        match other {
+                            Number::Int(oi) => {
+                                let after_op = f.$op(oi as f64);
+                                *self = Number::Float(after_op, after_op.to_string());
+                            }
+                            Number::Float(of, _) => {
+                                let after_op = f.$op(of);
+                                *self = Number::Float(after_op, after_op.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+gen_assign_fn!(AddAssign, add_assign, add);
+gen_assign_fn!(SubAssign, sub_assign, sub);
+gen_assign_fn!(MulAssign, mul_assign, mul);
+gen_assign_fn!(DivAssign, div_assign, div);
+gen_assign_fn!(RemAssign, rem_assign, rem);
+
 impl Hash for Number {
     fn hash<SipHasher>(&self, state: &mut SipHasher) where SipHasher: Hasher {
         match *self {
             Number::Int(i) => {
                 i.hash(state);
             }
-            Number::Float(f, ref fstr) => {
+            Number::Float(_, ref fstr) => {
                 fstr.hash(state);
             }
         }

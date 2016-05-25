@@ -2,6 +2,7 @@
 use data::*;
 use std::sync::Arc;
 use eval::Eval;
+use std::ops::{AddAssign, DivAssign, MulAssign, SubAssign, RemAssign};
 
 macro_rules! generate_base_fn {
     ($fnname:expr, $name:ident) => {
@@ -14,50 +15,122 @@ macro_rules! generate_normal_base_fn {
 }
 
 lazy_static! {
-    pub static ref BASE_FUNCTIONS: [(&'static str, Function); 6] = [
+    pub static ref BASE_FUNCTIONS: [(&'static str, Function); 14] = [
         generate_normal_base_fn!(list),
         generate_normal_base_fn!(cons),
         generate_normal_base_fn!(print),
         generate_normal_base_fn!(exit),
         generate_normal_base_fn!(cond),
-        generate_base_fn!("=", equals)
+        generate_base_fn!("=", equals),
+        generate_normal_base_fn!(and),
+        generate_normal_base_fn!(or),
+        generate_normal_base_fn!(not),
+        generate_base_fn!("+", add),
+        generate_base_fn!("-", sub),
+        generate_base_fn!("*", mul),
+        generate_base_fn!("/", div),
+        generate_base_fn!("%", rem),
     ];
 }
 
-//fn add(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
-//let mut numbers = Vec::with_capacity(args.len());
-//for a in args.iter() {
-//match get_number(a) {
-//Ok(r) => numbers.push(r),
-//Err(e) => return Err(e)
-//}
+macro_rules! gen_math_func {
+    ( $name:ident, $op:ident ) => {
+        fn $name(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+            if args.iter().all(|o| {if let &Object::Number(_) = o {true} else {false}}) && args.len() > 1 {
+                let mut base = args[0].unwrap_number().unwrap().to_owned();
+                for arg in args.iter().skip(1).map(|o| (*o.unwrap_number().unwrap()).clone()) {
+                    base.$op(arg);
+                }
+                Ok(Some(Object::Number(base)))
+            } else {
+                Err(format!("Invalid or too little args for function {}", stringify!($name)))
+            }
+        }
+    }
+}
+
+gen_math_func!(add, add_assign);
+gen_math_func!(sub, sub_assign);
+gen_math_func!(mul, mul_assign);
+gen_math_func!(div, div_assign);
+gen_math_func!(rem, rem_assign);
+
+macro_rules! x_only {
+    ( $item_ident:ident; $qualifier:ident; $args:expr; $operation:block ) => {
+        if $qualifier(&$args) {
+            $item_ident = $args.iter().map(|obj| obj.unwrap_boolean().unwrap()).collect::<Vec<_>>();
+            $operation
+        } else {
+            Err(format!("Function only usable on {} items", stringify!($qualifier)))
+        }
+    }
+}
+
+fn all_boolean(args: &[Object]) -> bool {
+    args.iter().all(|o| {
+        if let &Object::Boolean(_) = o {
+            true
+        } else {
+            false
+        }
+    })
+}
+
+fn and(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+    let items;
+    x_only!(items; all_boolean; args;
+            {
+                if items.iter().all(|&o| o == &Boolean::True) {
+                    Ok(Some(true.into()))
+                } else {
+                    Ok(Some(false.into()))
+                }
+            })
+}
+
+fn or(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+    let items;
+    x_only!(items; all_boolean; args;
+            {
+                if items.iter().any(|&o| o == &Boolean::True) {
+                    Ok(Some(true.into()))
+                } else {
+                    Ok(Some(false.into()))
+                }
+            })
+}
+
+fn not(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+    let items;
+    x_only!(items; all_boolean; args;
+            {
+                if items.len() != 1 {
+                    Err("Invalid number of args for logical not".to_string())
+                } else {
+                    let notted: bool = (*items[0]).clone().into();
+                    Ok(Some((!notted).into()))
+                }
+            })
+}
+
+//fn xor(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+//unimplemented!()
 //}
 
-//Ok(Object::Number(numbers.first().unwrap().clone()))
+//fn bit_and(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+//unimplemented!()
 //}
 
-//fn subtract(args: Vec<Object>, env: &mut Env) -> Object {
-//for object in args.iter() {
-
-//}
+//fn bit_or(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+//unimplemented!()
 //}
 
-//fn get_number(object: &Object) -> Result<Number, String> {
-//if let &Object::Number(ref n) = object {
-//Ok(n.clone())
-//} else {
-//Err(format!("Object {:?} is not a number.", object))
-//}
+//fn bit_not(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+//unimplemented!()
 //}
 
-//fn define(args: Vec<Object>, env: &mut Env) ->
-
-//fn to_str(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
-//if args.len() > 1 {
-//Err("Invalid number of args for to_str. Should be 1.")
-//} else {
-
-//}
+//fn bit_xor(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
+//unimplemented!()
 //}
 
 fn equals(args: Vec<Object>, _: &mut Env) -> Result<Option<Object>, String> {
