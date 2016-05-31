@@ -234,7 +234,7 @@ impl Env {
     }
     pub fn add_variable(&mut self, var: String, value: Object) {
         if self.variables().keys().any(|x| x == &var) {
-            panic!("Variable {:?} cannot be set because it already exists in current env.");
+            panic!(format!("Variable {:?} cannot be set because it already exists in current env.", var));
         } else {
             self.variables.insert(var, value);
         }
