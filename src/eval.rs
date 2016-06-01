@@ -90,6 +90,13 @@ impl Eval for Expr {
                                 define_function(fndef, rest, env)
                             },
                         }
+                    } else if function_name == "lambda" {
+                        let (first, rest) = args.split_first().unwrap();
+                        if let Expr::Exprs(ref fndef) = *first {
+                            Ok(Some(Object::Function(try!(Function::from_exprs(fndef, rest)))))
+                        } else {
+                            Err("Invalid lambda function".to_string())
+                        }
                     } else {
                         eval_function_named(function_name, &args, env)
                     }
